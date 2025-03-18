@@ -10,15 +10,22 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
-volatile atomic_int server_running = 1;
+atomic_int server_running = 1;
 int server_fd;
+char *response = "Hello world";
+uint64_t response_length = 11;
+
+char * response_buffer;
 
 void *server_thread(void *arg) {
+    response_buffer = (char *)malloc(sizeof(uint64_t) + response_length);
+    memcpy(response_buffer, &response_length, sizeof(uint64_t));
+    memcpy(response_buffer + sizeof(uint64_t), response, response_length);
+
     int new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     char buffer[BUFFER_SIZE] = {0};
-    char *response = "Hello world";
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -60,7 +67,7 @@ void *server_thread(void *arg) {
 
         // Check if the received message is 'a'
         if (buffer[0] == 'a' && buffer[1] == '\0') {
-            send(new_socket, response, strlen(response), 0);
+            send(new_socket, response_buffer, sizeof(uint64_t) + response_length, 0);
         }
 
         // Close the connection

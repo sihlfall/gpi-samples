@@ -7,6 +7,8 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
+char * response;
+
 int main() {
     int sock = 0;
     struct sockaddr_in serv_addr;
@@ -39,10 +41,18 @@ int main() {
     printf("Message sent: %s\n", message);
 
     // Read server response
-    int valread = read(sock, buffer, BUFFER_SIZE);
-    if (valread > 0) {
-        printf("Server response: %s\n", buffer);
+    response = NULL;
+    uint64_t response_length = 0;
+    ssize_t valread = read(sock, &response_length, sizeof(uint64_t));
+    if (valread == 8) {
+        printf("Server response: %lu\n", response_length);
+        response = calloc(response_length + 1, sizeof(char));
+        valread = read(sock, response, response_length);
+        printf("%lu\n", valread);
+        response[response_length] = 0;
     }
+
+    printf("Text read: %s\n", response);
 
     // Close socket
     close(sock);
