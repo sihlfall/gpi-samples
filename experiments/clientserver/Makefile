@@ -10,10 +10,10 @@ all: $(BIN) $(BIN)/server $(BIN)/client
 $(BIN):
 	mkdir -p bin
 
-$(BIN)/server: $(BIN)/server.o
+$(BIN)/server: $(BIN)/server.o $(BIN)/clientserver.o
 	$(C) $(CFLAGS) -o $@ $^
 
-$(BIN)/client: $(BIN)/client.o
+$(BIN)/client: $(BIN)/client.o $(BIN)/clientserver.o
 	$(C) $(CFLAGS) -o $@ $^
 
 $(BIN)/%.o: $(SRC)/%.c Makefile
