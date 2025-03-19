@@ -209,5 +209,6 @@ err_create_socket:
 void
 client_cleanup_response (struct response * response)
 {
-    free (response->data); response->data = NULL; response->length = 0;
+    free (response->data);
+    memset (response, 0, sizeof(*response));
 }
