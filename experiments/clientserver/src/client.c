@@ -12,7 +12,7 @@ int main() {
 
     char * text = calloc(response.length + 1, sizeof (char));
     memcpy (text, response.data, response.length);
-    client_destroy_response (&response);
+    client_cleanup_response (&response);
 
     printf("Text read: %s\n", text);
 

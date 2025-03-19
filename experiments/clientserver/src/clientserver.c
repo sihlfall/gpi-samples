@@ -207,7 +207,7 @@ err_create_socket:
 }
 
 void
-client_destroy_response (struct response * response)
+client_cleanup_response (struct response * response)
 {
     free (response->data); response->data = NULL; response->length = 0;
 }

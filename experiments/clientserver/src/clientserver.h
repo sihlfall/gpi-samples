@@ -32,6 +32,6 @@ int client_make_request (
     struct response * response
 );
 
-void client_destroy_response (struct response * response);
+void client_cleanup_response (struct response * response);
 
 #endif
