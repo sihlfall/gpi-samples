@@ -12,12 +12,12 @@ struct server_thread {
     int server_fd;
     uint16_t port;
     int max_connections;
-    char * response_buffer;
+    unsigned char * response_buffer;
     size_t response_buffer_length;
 };
 
 struct response {
-    char * data;
+    unsigned char * data;
     size_t length;
 };
 

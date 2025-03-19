@@ -6,9 +6,39 @@
 static struct server_thread server_thread;
 
 int main () {
-    char * response_string = "Hello Urs and Guenti";
+    char * response_string = "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    "Hello Urs and Guenti"
+    ;
     struct response const response = {
-        .data = response_string,
+        .data = (unsigned char *)response_string,
         .length = strlen (response_string)
     };
     printf ("Response length: %ld\n", response.length);

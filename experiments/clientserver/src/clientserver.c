@@ -18,8 +18,8 @@
 
 static inline
 void
-to_big_endian_64 (char * buffer, size_t x) {
-    char * p = &buffer[7];
+to_big_endian_64 (unsigned char * buffer, size_t x) {
+    unsigned char * p = &buffer[7];
     * (p--) = x & 0xff; x >>= 8;
     * (p--) = x & 0xff; x >>= 8;
     * (p--) = x & 0xff; x >>= 8;
@@ -27,24 +27,25 @@ to_big_endian_64 (char * buffer, size_t x) {
     * (p--) = x & 0xff; x >>= 8;
     * (p--) = x & 0xff; x >>= 8;
     * (p--) = x & 0xff; x >>= 8;
-    * p = x;
+    * p = x & 0xff;
 }
 
 static inline
 size_t
-from_big_endian_64 (char const * buffer) {
-    char const * p = buffer;
-    size_t x = * p++; x <<= 8;
-    x |= * p++; x <<= 8;
-    x |= * p++; x <<= 8;
-    x |= * p++; x <<= 8;
-    x |= * p++; x <<= 8;
-    x |= * p++; x <<= 8;
-    x |= * p++; x <<= 8;
+from_big_endian_64 (unsigned char const * buffer) {
+    unsigned char const * p = buffer;
+    size_t x;
+    x = * (p++); x <<= 8;
+    x |= * (p++); x <<= 8;
+    x |= * (p++); x <<= 8;
+    x |= * (p++); x <<= 8;
+    x |= * (p++); x <<= 8;
+    x |= * (p++); x <<= 8;
+    x |= * (p++); x <<= 8;
     x |= * p;
     return x;
 }
-
+    
 static
 void *
 server_run (void * args)
@@ -114,7 +115,7 @@ set_response (
 )
 {
     size_t response_buffer_length = sizeof (size_t) + response->length;
-    char * response_buffer = (char *) malloc (response_buffer_length);
+    unsigned char * response_buffer = (unsigned char *) malloc (response_buffer_length);
     /* TODO: Check for error? */
 
     to_big_endian_64 (response_buffer, response->length);
@@ -185,7 +186,7 @@ client_make_request(
     ssize_t n_bytes_read;
 
     /* Read server response */
-    char lbuffer[8];
+    unsigned char lbuffer[8];
     n_bytes_read = read (sock, &lbuffer, 8);
     printf("%c\n", lbuffer[0]);
     CHECK_GOTO_ERROR(n_bytes_read == 8, "Invalid response", err_receiving_length)
