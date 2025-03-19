@@ -8,6 +8,7 @@
 struct server_thread {
     pthread_t server_tid;
     atomic_int request_stop;
+    atomic_int is_running;
     int server_fd;
     uint16_t port;
     int max_connections;

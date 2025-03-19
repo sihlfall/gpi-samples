@@ -56,6 +56,10 @@ server_run (void * args)
     CHECK_GOTO_ERROR(myself->server_fd != 0, "Socket failed", err_create_socket)
 
     {
+        int optval = 1;
+        setsockopt (myself->server_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    }
+    {
         struct sockaddr_in address = {
             .sin_family = AF_INET,
             .sin_addr.s_addr = INADDR_ANY,
@@ -142,7 +146,7 @@ void
 server_destroy (struct server_thread * server_thread)
 {
     server_thread->request_stop = 1;
-    shutdown (server_thread->server_fd, SHUT_RDWR); /* interrupt accept () */
+    shutdown (server_thread->server_fd, SHUT_RD); /* interrupt accept () */
     pthread_join (server_thread->server_tid, NULL);
     free (server_thread->response_buffer);
 }
@@ -210,5 +214,5 @@ void
 client_cleanup_response (struct response * response)
 {
     free (response->data);
-    memset (response, 0, sizeof(*response));
+    memset (response, 0, sizeof (*response));
 }
