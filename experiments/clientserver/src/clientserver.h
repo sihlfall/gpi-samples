@@ -15,11 +15,23 @@ struct server_thread {
     size_t response_buffer_length;
 };
 
-int initialize_server (
+struct response {
+    char * data;
+    size_t length;
+};
+
+int server_initialize (
     struct server_thread * server_thread, uint16_t port, int max_connections,
-    char const * response, size_t response_length
+    struct response const * response
 );
 
-void destroy_server (struct server_thread * server_thread);
+void server_destroy (struct server_thread * server_thread);
+
+int client_make_request (
+    char const * hostip4, uint16_t port,
+    struct response * response
+);
+
+void client_destroy_response (struct response * response);
 
 #endif

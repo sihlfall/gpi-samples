@@ -6,11 +6,14 @@
 static struct server_thread server_thread;
 
 int main () {
-    char const * response = "Hello world";
-    uint64_t response_length = strlen (response);
-    printf ("Response length: %ld\n", response_length);
+    char * response_string = "Hello Urs and Guenti";
+    struct response const response = {
+        .data = response_string,
+        .length = strlen (response_string)
+    };
+    printf ("Response length: %ld\n", response.length);
 
-    if (initialize_server (&server_thread, 8080, 3, response, response_length))
+    if (server_initialize (&server_thread, 8080, 3, &response))
     {
         printf ("Could not start server.\n");
         return 1;
@@ -22,7 +25,7 @@ int main () {
     getc (stdin);
 
     printf ("Stopping server...\n");
-    destroy_server (&server_thread);
+    server_destroy (&server_thread);
     printf ("Server stopped.\n");
 
     return 0;

@@ -9,8 +9,9 @@
 #define CHECK_GOTO_ERROR(cond, msg, errlabel) \
     do {                                     \
         if (!(cond)) {                       \
-            perror ((msg));                   \
-            printf ((msg));                   \
+            reterr = 1;                      \
+            perror ((msg));                  \
+            printf ((msg));                  \
             goto errlabel;                   \
         }                                    \
     } while (0);                               
@@ -28,11 +29,27 @@ to_big_endian_64 (char * buffer, size_t x) {
     * (p--) = x & 0xff; x >>= 8;
     * p = x;
 }
-    
+
+static inline
+size_t
+from_big_endian_64 (char const * buffer) {
+    char const * p = buffer;
+    size_t x = * p++; x <<= 8;
+    x |= * p++; x <<= 8;
+    x |= * p++; x <<= 8;
+    x |= * p++; x <<= 8;
+    x |= * p++; x <<= 8;
+    x |= * p++; x <<= 8;
+    x |= * p++; x <<= 8;
+    x |= * p;
+    return x;
+}
+
 static
 void *
 server_run (void * args)
 {
+    __attribute_maybe_unused__ int reterr = 0;
     struct server_thread * myself = (struct server_thread *) args;
 
     myself->server_fd = socket (AF_INET, SOCK_STREAM, 0);
@@ -89,28 +106,28 @@ static inline
 void
 set_response (
     struct server_thread * server_thread,
-    char const * response, size_t response_length
+    struct response const * response
 )
 {
-    size_t response_buffer_length = sizeof (size_t) + response_length;
+    size_t response_buffer_length = sizeof (size_t) + response->length;
     char * response_buffer = (char *) malloc (response_buffer_length);
     /* TODO: Check for error? */
 
-    to_big_endian_64 (response_buffer, response_length);
-    memcpy (response_buffer + 8, response, response_length);
+    to_big_endian_64 (response_buffer, response->length);
+    memcpy (response_buffer + 8, response->data, response->length);
 
     server_thread->response_buffer_length = response_buffer_length;
     server_thread->response_buffer = response_buffer;
 }
 
 int
-initialize_server (
+server_initialize (
     struct server_thread * server_thread, uint16_t port, int max_connections,
-    char const * response, size_t response_length
+    struct response const * response
 )
 {
     memset (server_thread, 0, sizeof (struct server_thread));
-    set_response (server_thread, response, response_length);
+    set_response (server_thread, response);
     server_thread->port = port;
     server_thread->max_connections = max_connections;
     if (pthread_create (&server_thread->server_tid, NULL, server_run, server_thread)) {
@@ -122,10 +139,75 @@ initialize_server (
 }
 
 void
-destroy_server (struct server_thread * server_thread)
+server_destroy (struct server_thread * server_thread)
 {
     server_thread->request_stop = 1;
     shutdown (server_thread->server_fd, SHUT_RDWR); /* interrupt accept () */
     pthread_join (server_thread->server_tid, NULL);
     free (server_thread->response_buffer);
+}
+
+int
+client_make_request(
+    char const * hostip4, uint16_t port,
+    struct response * response
+)
+{
+    int reterr = 0;
+    response->data = NULL; response->length = 0;
+
+    // Create socket
+    int sock = socket (AF_INET, SOCK_STREAM, 0);
+    CHECK_GOTO_ERROR (sock >= 0, "Socket creation error", err_create_socket)
+
+    struct sockaddr_in serv_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons (port)
+    };
+    CHECK_GOTO_ERROR (
+        inet_pton(AF_INET, hostip4, &serv_addr.sin_addr) >= 0,
+        "Invalid address/Address not supported", err_convert_address
+    )
+
+    CHECK_GOTO_ERROR (
+        connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) >= 0,
+        "Connection failed", err_connect
+    )
+
+    char message = 'a';
+    send(sock, &message, 1, 0);
+    printf("Message sent: %c\n", message);
+
+    ssize_t n_bytes_read;
+
+    /* Read server response */
+    char lbuffer[8];
+    n_bytes_read = read (sock, &lbuffer, 8);
+    printf("%c\n", lbuffer[0]);
+    CHECK_GOTO_ERROR(n_bytes_read == 8, "Invalid response", err_receiving_length)
+    size_t n_bytes_to_expect = from_big_endian_64 (lbuffer);
+
+    printf("Server response: %lu\n", n_bytes_to_expect);
+    response->data = (char *) malloc (n_bytes_to_expect);
+    n_bytes_read = read(sock, response->data, n_bytes_to_expect);
+    if (n_bytes_read != n_bytes_to_expect) {
+        free (response->data); response->data = NULL;
+        CHECK_GOTO_ERROR(0, "Invalid response -- too few bytes received", err_inconsistent_response)
+    }
+    response->length = n_bytes_read;
+
+err_inconsistent_response:
+err_receiving_length:
+    close(sock);
+
+err_connect:
+err_convert_address:
+err_create_socket:
+    return reterr;
+}
+
+void
+client_destroy_response (struct response * response)
+{
+    free (response->data); response->data = NULL; response->length = 0;
 }
