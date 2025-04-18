@@ -1,5 +1,6 @@
 #include "clientserver.h"
 
+#include <ucp/api/ucp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -131,6 +132,35 @@ server_initialize (
     struct response const * response
 )
 {
+    ucp_context_h ucp_context;
+    ucp_worker_h ucp_worker;
+
+    /* initialize UCP context */
+    {
+        ucp_params_t ucp_params = {
+            .field_mask = UCP_PARAM_FIELD_FEATURES,
+            .features = UCP_FEATURE_TAG
+        };
+        ucs_status_t status = ucp_init (&ucp_params, NULL, &ucp_context);
+        if (status != UCS_OK) {
+            fprintf (stderr, "Initializing UCP context failed\n");
+            exit (1);
+        }
+    }
+
+    /* create worker */
+    {
+        ucp_worker_params_t ucp_worker_params = {
+            .field_mask = UCP_WORKER_PARAM_FIELD_THREAD_MODE,
+            .thread_mode = UCS_THREAD_MODE_SINGLE
+        };
+        ucs_status_t status = ucp_worker_create (ucp_context, &ucp_worker_params, &ucp_worker);
+        if (status != UCS_OK) {
+            fprintf (stderr, "Creating UCP worker failed\n");
+            exit (1);
+        }
+    }
+
     memset (server_thread, 0, sizeof (struct server_thread));
     set_response (server_thread, response);
     server_thread->port = port;
@@ -193,7 +223,7 @@ client_make_request(
     size_t n_bytes_to_expect = from_big_endian_64 (lbuffer);
 
     printf("Server response: %lu\n", n_bytes_to_expect);
-    response->data = (char *) malloc (n_bytes_to_expect);
+    response->data = (unsigned char *) malloc (n_bytes_to_expect);
     n_bytes_read = read(sock, response->data, n_bytes_to_expect);
     if (n_bytes_read != n_bytes_to_expect) {
         free (response->data); response->data = NULL;
